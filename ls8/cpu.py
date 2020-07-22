@@ -46,34 +46,29 @@ class CPU:
 
     def handle_LDI(self, a, b):
         self.reg[a] = b
-        self.pc += 3
 
-    def handle_PRN(self, a, b=None):
+    def handle_PRN(self, a):
         print(self.reg[a])
-        self.pc += 2
 
     def handle_MUL(self, a, b):
         self.alu('MUL', a, b)
-        self.pc += 3
 
-    def handle_PUSH(self, a, b=None):
+    def handle_PUSH(self, a):
         self.reg[SP] -= 1
         self.ram[self.reg[SP]] = self.reg[a]
-        self.pc += 2
 
-    def handle_POP(self, a, b=None):
+    def handle_POP(self, a):
         self.reg[a] = self.ram[self.reg[SP]]
         self.reg[SP] += 1
-        self.pc += 2
 
-    def handle_CALL(self, a, b=None):
+    def handle_CALL(self, a):
         return_address = self.pc + 2
         self.reg[SP] -= 1
         self.ram[self.reg[SP]] = return_address
         sub_routine = self.reg[a]
         self.pc = sub_routine
 
-    def handle_RET(self, a=None, b=None):
+    def handle_RET(self):
         return_address = self.ram[self.reg[SP]]
         self.reg[SP] += 1
         self.pc = return_address
@@ -132,13 +127,31 @@ class CPU:
         """Run the CPU."""
 
         while self.running:
-            self.trace()
+
             IR = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            if IR == HLT:
-                self.running = False
-            else:
+            instructions = (IR >> 6) + 1
+            direct_set_instructions = ((IR >> 4) & 0b1) == 1
 
-                self.dispatchtable[IR](operand_a, operand_b)
+            try:
+
+                if not direct_set_instructions:
+                    self.pc += instructions
+
+                if IR in self.dispatchtable:
+                    if instructions == 1:
+                        self.dispatchtable[IR]()
+                    elif instructions == 2:
+                        self.dispatchtable[IR](operand_a)
+                    else:
+                        self.dispatchtable[IR](operand_a, operand_b)
+            except Exception:
+                print(f'Invalid instruction {bin(IR)} at {hex(self.pc)}')
+
+            # if IR == HLT:
+            #     self.running = False
+            # else:
+
+            #     self.dispatchtable[IR](operand_a, operand_b)
