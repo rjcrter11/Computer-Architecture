@@ -5,7 +5,11 @@
 import sys
 from cpu import *
 
-cpu = CPU()
 
-cpu.load()
-cpu.run()
+if len(sys.argv) == 2:
+    cpu = CPU()
+    cpu.load()
+    cpu.run()
+else:
+    print('Please pass in second file name: python3 ls8.py file_name')
+    sys.exit()
